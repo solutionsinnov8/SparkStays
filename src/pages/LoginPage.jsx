@@ -27,7 +27,6 @@ const LoginPage = () => {
 
   return (
    <div>
-    <Navbar />
     <Login />
     <Footer />
    </div>

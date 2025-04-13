@@ -6,8 +6,6 @@ import Navbar from './Navbar';
 const HeroSection = () => {
   return (
     <div className='overflow-x-hidden'>
-      <Navbar />
-
       {/* Hero Section with Background Image and Content */}
       <section className="h-screen bg-cover bg-center relative" style={{ backgroundImage: 'url(images/home.jpg)' }}>
         <div className="absolute inset-0 bg-black bg-opacity-50"></div>

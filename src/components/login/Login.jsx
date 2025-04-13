@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useContext, useEffect } from 'react'; 
+import { AuthContext } from '../../context/AuthContext';
 import {
   Button,
   TextField,
@@ -8,6 +9,7 @@ import {
 } from '@mui/material';
 import { Select } from 'antd';
 import { useNavigate } from 'react-router-dom';
+import api from '../../api/axiosInstance';
 
 const { Option } = Select;
 
@@ -19,14 +21,57 @@ const AuthPage = () => {
   const [fullName, setFullName] = useState('');
   const [userRole, setUserRole] = useState('');
   const navigate = useNavigate();
+  const { login } = useContext(AuthContext);
+  const { user, setUser } = useContext(AuthContext);
 
-  const handleSubmit = (e) => {
+  useEffect(() => {
+    console.log("User from context:", user);
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      if (user.role === 'guest') {
+        navigate('/dashboard');
+      } else if (user.role === 'event_planner') {
+        navigate('/event-planner/dashboard');
+      } else if (user.role === 'admin') {
+        navigate('/admin/dashboard');
+      }
+    }
+  }, [user, navigate]);
+
+  
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     if (tab === 0) {
-      const user = { email, password, role: 'user' };
-      navigate(user.role === 'user' ? '/dashboard' : '/admin/dashboard');
+      // Login
+      try {
+        const res = await api.post('/auth/login', { email, password });
+        console.log('Login response:::::::::::::', res.data);
+        const { token, user } = res.data;
+  
+        // Save token to localStorage or context
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(user));
+  
+        // Redirect based on user role
+        login(user, token);
+        if (user.role === 'guest') {
+          navigate('/dashboard');
+        } else if (user.role === 'event_planner') {
+          navigate('/event-planner/dashboard');
+        } else if (user.role === 'admin') {
+          navigate('/admin/dashboard');
+        } else {
+          alert('Unknown role');
+        }
+      } catch (error) {
+        console.error('Login error:', error);
+        alert(error.response?.data?.message || 'Login failed');
+      }
     } else {
+      // Register
       if (password !== confirmPassword) {
         alert('Passwords do not match!');
         return;
@@ -35,21 +80,25 @@ const AuthPage = () => {
         alert('Please fill all fields!');
         return;
       }
-      const newUser = { fullName, email, password, userRole };
-      console.log('Registering:', newUser);
-      alert('Registered successfully!');
-      setTab(0);
+  
+      try {
+        const newUser = { fullName, email, password, role: userRole };
+        await api.post('/auth/register', newUser);
+        alert('Registered successfully! Please login.');
+        setTab(0);
+      } catch (err) {
+        alert(err.response?.data?.message || 'Registration failed!');
+      }
     }
   };
+  
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-300 via-purple-200 to-pink-200 relative overflow-hidden px-4">
-      {/* Decorative shapes */}
       <div className="absolute w-96 h-96 bg-pink-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 top-[-10%] left-[-10%] animate-pulse" />
       <div className="absolute w-96 h-96 bg-blue-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 bottom-[-10%] right-[-10%] animate-pulse" />
 
       <div className="flex flex-col md:flex-row bg-white/30 backdrop-blur-md p-10 rounded-2xl shadow-2xl w-full max-w-4xl border border-white/20 z-10 mt-[80px]">
-        {/* Branding Panel */}
         <div className="hidden md:flex flex-col justify-center items-start pr-10 border-r border-white/20">
           <Typography variant="h4" className="text-white font-bold">
             SparkStays
@@ -59,7 +108,6 @@ const AuthPage = () => {
           </Typography>
         </div>
 
-        {/* Form Panel */}
         <div className="w-full md:w-1/2 mt-6 md:mt-0">
           <Tabs
             value={tab}
@@ -87,8 +135,6 @@ const AuthPage = () => {
                     className: 'bg-white/90 rounded-md',
                   }}
                 />
-
-                {/* Ant Design Select */}
                 <div className="bg-white/90 rounded-lg">
                   <Select
                     placeholder="Select User Type"

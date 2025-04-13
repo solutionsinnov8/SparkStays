@@ -12,3 +12,7 @@
 .logo{
   font-family: "Bungee Tint", sans-serif !important;
 }
+body{
+  width: auto !important;
+  height: auto !important;
+}
