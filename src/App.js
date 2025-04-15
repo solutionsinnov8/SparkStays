@@ -18,6 +18,7 @@ import Packages from './components/event-planner/Packages';
 import Settings from './components/event-planner/Settings';
 
 import 'antd/dist/reset.css';
+import { ToastContainer } from 'react-toastify';
 
 const App = () => {
   return (
@@ -53,6 +54,7 @@ const App = () => {
           </Route>
         </Routes>
       </Router>
+      <ToastContainer position="top-right" autoClose={3000} />
     </AuthProvider>
   );
 };

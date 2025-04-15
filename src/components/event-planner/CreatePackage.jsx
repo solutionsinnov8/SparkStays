@@ -2,6 +2,8 @@ import React, { useContext, useState } from 'react';
 import { Form, Input, InputNumber, Button, Select, Card } from 'antd';
 import api from '../../api/axiosInstance';
 import { AuthContext } from '../../context/AuthContext';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 
 const { TextArea } = Input;
@@ -25,10 +27,12 @@ const CreatePackage = () => {
         ...values,
         planner: eventPlannerName,
       };
-
+  
       const res = await api.post('/packages', packageData);
       console.log('Package Created:', res.data);
-
+  
+      toast.success('Package created successfully!');
+  
       form.resetFields();
       setPreviewData({
         name: '',
@@ -39,8 +43,10 @@ const CreatePackage = () => {
       });
     } catch (error) {
       console.error('Error creating package:', error);
+      toast.error('Failed to create package. Please try again.');
     }
   };
+  
 
   const onValuesChange = (_, allValues) => {
     setPreviewData(allValues);

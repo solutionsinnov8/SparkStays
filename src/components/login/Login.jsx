@@ -10,6 +10,7 @@ import {
 import { Select } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axiosInstance';
+import { toast } from 'react-toastify';
 
 const { Option } = Select;
 
@@ -48,7 +49,6 @@ const AuthPage = () => {
       // Login
       try {
         const res = await api.post('/auth/login', { email, password });
-        console.log('Login response:::::::::::::', res.data);
         const { token, user } = res.data;
   
         // Save token to localStorage or context
@@ -57,6 +57,7 @@ const AuthPage = () => {
   
         // Redirect based on user role
         login(user, token);
+        toast.success('Login successful!');
         if (user.role === 'guest') {
           navigate('/dashboard');
         } else if (user.role === 'event_planner') {
@@ -64,30 +65,30 @@ const AuthPage = () => {
         } else if (user.role === 'admin') {
           navigate('/admin/dashboard');
         } else {
-          alert('Unknown role');
+          toast.warn('Unknown role, but logged in!');
         }
       } catch (error) {
         console.error('Login error:', error);
-        alert(error.response?.data?.message || 'Login failed');
+        toast.error(error.response?.data?.message || 'Login failed');
       }
     } else {
       // Register
       if (password !== confirmPassword) {
-        alert('Passwords do not match!');
+        toast.error('Passwords do not match!');
         return;
       }
       if (!userRole || !fullName) {
-        alert('Please fill all fields!');
+        toast.error('Please fill all fields!');
         return;
       }
   
       try {
         const newUser = { fullName, email, password, role: userRole };
         await api.post('/auth/register', newUser);
-        alert('Registered successfully! Please login.');
+        toast.success('Registered successfully! Please login.');
         setTab(0);
       } catch (err) {
-        alert(err.response?.data?.message || 'Registration failed!');
+        toast.error(err.response?.data?.message || 'Registration failed!');
       }
     }
   };
