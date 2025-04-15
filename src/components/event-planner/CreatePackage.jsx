@@ -1,16 +1,16 @@
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { Form, Input, InputNumber, Button, Select, Card } from 'antd';
 import api from '../../api/axiosInstance';
+import { AuthContext } from '../../context/AuthContext';
+
 
 const { TextArea } = Input;
 const { Option } = Select;
 
 const CreatePackage = () => {
   const [form] = Form.useForm();
-
-  // Static event planner name (replace with dynamic if needed)
-  const eventPlannerName = 'Zeeshan Events';
-
+  const { user } = useContext(AuthContext);
+  const eventPlannerName = user.fullName;
   const [previewData, setPreviewData] = useState({
     name: '',
     type: '',
