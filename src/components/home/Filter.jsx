@@ -2,23 +2,24 @@ import React, { useEffect, useState } from 'react';
 import { DatePicker, Select, Button, Input, Card, Row, Col } from 'antd';
 import { useForm, Controller } from 'react-hook-form';
 import api from '../../api/axiosInstance';
+import { toast } from 'react-toastify';
 
 const { Option } = Select;
 
 const Filter = () => {
-  const { control, handleSubmit, setValue, watch } = useForm();
+  const { control, handleSubmit, setValue, watch, reset, formState: { errors, isValid } } = useForm({ mode: 'onChange' });
   const [step, setStep] = useState(1);
   const [packageType, setPackageType] = useState(null);
   const [selectedPackage, setSelectedPackage] = useState(null);
-  const [allPackages, setAllPackages] = useState([]); // all fetched packages
+  const [allPackages, setAllPackages] = useState([]);
   const [filteredPackages, setFilteredPackages] = useState([]);
+  const priceRange = watch('priceRange');
 
   useEffect(() => {
-    // Fetch packages from API
     const fetchPackages = async () => {
       try {
         const res = await api.get('/packages');
-        setAllPackages(res.data); // assuming res.data is an array of packages
+        setAllPackages(res.data);
       } catch (err) {
         console.error('Failed to fetch packages', err);
       }
@@ -28,10 +29,16 @@ const Filter = () => {
 
   useEffect(() => {
     if (packageType && allPackages.length > 0) {
-      const filtered = allPackages.filter(pkg => pkg.type === packageType);
+      let filtered = allPackages.filter(pkg => pkg.type === packageType);
+
+      if (priceRange) {
+        const maxPrice = parseInt(priceRange, 10);
+        filtered = filtered.filter(pkg => pkg.price <= maxPrice);
+      }
+
       setFilteredPackages(filtered);
     }
-  }, [packageType, allPackages]);
+  }, [packageType, priceRange, allPackages]);
 
   const handlePackageTypeChange = (value) => {
     if (value !== packageType) {
@@ -55,9 +62,31 @@ const Filter = () => {
     }
   };
 
-  const onSubmit = (data) => {
-    console.log("Form Submitted:", data);
-    // Proceed to payment logic here
+  const onSubmit = async (data) => {
+    try {
+      const bookingData = {
+        guestName: data.names,
+        checkInDate: data.checkInDate,
+        desiredDate: data.desiredDate,
+        packageType: packageType,
+        packageId: selectedPackage,
+        priceRange: data.priceRange,
+        status: 'pending',
+        date: data.checkInDate || new Date(),
+        user: "guest"
+      };
+
+      const response = await api.post('/bookings', bookingData);
+      console.log('Booking created:', response.data);
+      toast.success('Booking successfully submitted!');
+      reset();
+      setStep(1);
+      setPackageType(null);
+      setSelectedPackage(null);
+    } catch (error) {
+      console.error('Failed to submit booking:', error);
+      toast.error('Failed to submit booking. Please try again.');
+    }
   };
 
   return (
@@ -73,6 +102,7 @@ const Filter = () => {
               <Controller
                 name="packageType"
                 control={control}
+                rules={{ required: 'Package Type is required' }}
                 render={({ field }) => (
                   <Select
                     {...field}
@@ -86,6 +116,7 @@ const Filter = () => {
                   </Select>
                 )}
               />
+              {errors.packageType && <p className="text-red-500 text-xs mt-2">{errors.packageType.message}</p>}
             </div>
 
             <div className="mt-4">
@@ -93,6 +124,7 @@ const Filter = () => {
               <Controller
                 name="priceRange"
                 control={control}
+                rules={{ required: 'Price Range is required' }}
                 render={({ field }) => (
                   <Select
                     {...field}
@@ -107,6 +139,7 @@ const Filter = () => {
                   </Select>
                 )}
               />
+              {errors.priceRange && <p className="text-red-500 text-xs mt-2">{errors.priceRange.message}</p>}
             </div>
 
             {/* Display Filtered Packages */}
@@ -157,10 +190,12 @@ const Filter = () => {
               <Controller
                 name="names"
                 control={control}
+                rules={{ required: 'Names are required' }}
                 render={({ field }) => (
                   <Input {...field} className="w-full mt-2 h-[45px]" placeholder="Enter Names" />
                 )}
               />
+              {errors.names && <p className="text-red-500 text-xs mt-2">{errors.names.message}</p>}
             </div>
 
             <div>
@@ -168,10 +203,12 @@ const Filter = () => {
               <Controller
                 name="checkInDate"
                 control={control}
+                rules={{ required: 'Check-in Date is required' }}
                 render={({ field }) => (
                   <DatePicker {...field} className="w-full mt-2 h-[45px]" onChange={(date) => setValue('checkInDate', date)} />
                 )}
               />
+              {errors.checkInDate && <p className="text-red-500 text-xs mt-2">{errors.checkInDate.message}</p>}
             </div>
 
             <div>
