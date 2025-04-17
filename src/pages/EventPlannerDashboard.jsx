@@ -54,7 +54,9 @@ const EventPlannerDashboard = () => {
     { title: 'Total Bookings', value: totalBookings, icon: <UserOutlined className="text-2xl text-blue-500" /> },
     { title: 'Pending', value: pending, icon: <ClockCircleOutlined className="text-2xl text-yellow-500" /> },
     { title: 'Accepted', value: accepted, icon: <CheckCircleOutlined className="text-2xl text-green-500" /> },
+    { title: 'Rejected',value: rejected, icon: <CloseCircleOutlined className="text-2xl text-red-500" />},
     { title: 'Revenue', value: `$${totalRevenue}`, icon: <DollarOutlined className="text-2xl text-purple-500" /> },
+    
   ];
 
   const columns = [
@@ -122,7 +124,7 @@ const EventPlannerDashboard = () => {
       ) : (
         <>
           {/* Analytics Summary */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
             {analytics.map((item, index) => (
               <Card key={index} bordered>
                 <div className="flex justify-between items-center">

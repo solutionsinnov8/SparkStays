@@ -6,15 +6,15 @@ import {
   OrderedListOutlined,
   SettingOutlined,
 } from '@ant-design/icons';
-import { Link, Outlet } from 'react-router-dom'; // use Outlet to render nested routes
+import { Link, Outlet } from 'react-router-dom';
 
 const { Sider, Content } = Layout;
 
 const EventPlannerLayout = () => {
   return (
-    <Layout style={{ marginTop: "80px" }} className='min-h-[calc(100vh-80px)]'>
-      {/* Sidebar */}
-      <Sider width={250} className="bg-white shadow-md">
+    <div className="flex min-h-[calc(100vh-80px)] mt-[80px]">
+      {/* Fixed Sidebar */}
+      <div className="w-[250px] h-[calc(100vh-80px)] fixed top-[80px] left-0 bg-white shadow-md z-10">
         <div className="text-center py-6 font-bold text-xl text-blue-600">
           Event Planner
         </div>
@@ -33,15 +33,15 @@ const EventPlannerLayout = () => {
             <Link to="/event-planner/settings">Settings</Link>
           </Menu.Item>
         </Menu>
-      </Sider>
+      </div>
 
-      {/* Content Area */}
-      <Layout>
-        <Content style={{ margin: '24px 16px', padding: 24, background: '#fff' }}>
-          <Outlet /> {/* This will render the nested route content */}
-        </Content>
-      </Layout>
-    </Layout>
+      {/* Scrollable Content Area */}
+      <div className="ml-[250px] w-full p-6 bg-gray-50">
+        <div className="bg-white p-6 shadow-md min-h-[calc(100vh-80px)]">
+          <Outlet />
+        </div>
+      </div>
+    </div>
   );
 };
 
