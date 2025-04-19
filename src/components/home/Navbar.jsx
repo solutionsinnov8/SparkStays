@@ -8,18 +8,15 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
- 
-  
-  const { user, setUser } = useContext(AuthContext);
-    const navigate = useNavigate();
+  const { user, logout } = useContext(AuthContext);
+  const navigate = useNavigate();
   const dropdownRef = useRef();
 
   const toggleMobileMenu = () => setIsOpen(!isOpen);
   const toggleProfileDropdown = () => setIsProfileOpen(!isProfileOpen);
 
   const handleLogout = () => {
-    localStorage.removeItem('user');
-    setUser(null);
+    logout();
     setShowLogoutModal(false);
     navigate('/login');
   };

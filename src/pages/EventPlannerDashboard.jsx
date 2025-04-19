@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { Card, Statistic, Table, Tag, List, Avatar, Button, Spin, message } from 'antd';
 import {
   DollarOutlined,
@@ -9,14 +9,21 @@ import {
 } from '@ant-design/icons';
 import { Bar } from '@ant-design/plots';
 import api from '../api/axiosInstance';
+import { AuthContext } from '../context/AuthContext';
 
 const EventPlannerDashboard = () => {
   const [bookings, setBookings] = useState([]);
+  const { user } = useContext(AuthContext); 
+  const { token } = useContext(AuthContext); 
   const [loading, setLoading] = useState(true);
-
+    
   const fetchBookings = async () => {
     try {
-      const response = await api.get('/bookings');
+      const response = await api.get('/bookings/my-bookings', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       setBookings(response.data);
     } catch (error) {
       message.error('Failed to fetch bookings');
@@ -26,10 +33,12 @@ const EventPlannerDashboard = () => {
   };
 
   useEffect(() => {
-    fetchBookings();
-    const interval = setInterval(fetchBookings, 5000);
-    return () => clearInterval(interval);
-  }, []);
+    if (token) {
+      fetchBookings();
+      const interval = setInterval(fetchBookings, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [token]);
 
   const handleUpdateStatus = async (id, status) => {
     try {
@@ -54,9 +63,9 @@ const EventPlannerDashboard = () => {
     { title: 'Total Bookings', value: totalBookings, icon: <UserOutlined className="text-2xl text-blue-500" /> },
     { title: 'Pending', value: pending, icon: <ClockCircleOutlined className="text-2xl text-yellow-500" /> },
     { title: 'Accepted', value: accepted, icon: <CheckCircleOutlined className="text-2xl text-green-500" /> },
-    { title: 'Rejected',value: rejected, icon: <CloseCircleOutlined className="text-2xl text-red-500" />},
+    { title: 'Rejected', value: rejected, icon: <CloseCircleOutlined className="text-2xl text-red-500" /> },
     { title: 'Revenue', value: `$${totalRevenue}`, icon: <DollarOutlined className="text-2xl text-purple-500" /> },
-    
+
   ];
 
   const columns = [

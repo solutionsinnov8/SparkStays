@@ -4,6 +4,7 @@ import api from '../../api/axiosInstance';
 import { AuthContext } from '../../context/AuthContext';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+const token = localStorage.getItem('token'); 
 
 
 const { TextArea } = Input;
@@ -13,6 +14,7 @@ const CreatePackage = () => {
   const [form] = Form.useForm();
   const { user } = useContext(AuthContext);
   const eventPlannerName = user.fullName;
+  const eventPlannerId = user._id;
   const [previewData, setPreviewData] = useState({
     name: '',
     type: '',
@@ -25,10 +27,14 @@ const CreatePackage = () => {
     try {
       const packageData = {
         ...values,
-        planner: eventPlannerName,
+        planner: eventPlannerId,
       };
   
-      const res = await api.post('/packages', packageData);
+      const res = await api.post('/packages', packageData, {
+        headers: {
+          Authorization: `Bearer ${token}`, 
+        },
+      });
       console.log('Package Created:', res.data);
   
       toast.success('Package created successfully!');
