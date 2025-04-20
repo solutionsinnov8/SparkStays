@@ -66,7 +66,7 @@ const Packages = () => {
   useEffect(() => {
     const fetchPackages = async () => {
       try {
-        const res = await api.get('/packages', {
+        const res = await api.get('/packages/planner-packages', {
           headers: {
             Authorization: `Bearer ${token}`,
           },
