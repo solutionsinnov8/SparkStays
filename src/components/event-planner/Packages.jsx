@@ -1,16 +1,14 @@
 import React, { useContext, useEffect, useState } from 'react';
 import {
-  Card,
-  Row,
-  Col,
+  Table,
   Button,
-  Modal,
   Drawer,
   Form,
   Input,
   InputNumber,
   Select,
-  message,
+  Modal,
+  Tag,
 } from 'antd';
 import {
   EditOutlined,
@@ -19,20 +17,32 @@ import {
 } from '@ant-design/icons';
 import { AuthContext } from '../../context/AuthContext';
 import api from '../../api/axiosInstance';
+import { toast } from 'react-toastify';
 
-const { Meta } = Card;
 const { confirm } = Modal;
 
-
-
-
 const Packages = () => {
+  const [packages, setPackages] = useState([]);
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [form] = Form.useForm();
-  const [packages, setPackages]=useState([])
-  const { token } = useContext(AuthContext); 
-  
+  const { token } = useContext(AuthContext);
+
+  const fetchPackages = async () => {
+    try {
+      const res = await api.get('/packages/planner-packages', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setPackages(res.data);
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to load packages');
+    }
+  };
+
+  useEffect(() => {
+    fetchPackages();
+  }, []);
 
   const showEditDrawer = (pkg) => {
     setSelectedPackage(pkg);
@@ -40,95 +50,120 @@ const Packages = () => {
     setDrawerVisible(true);
   };
 
-  const handleUpdate = (values) => {
-    setPackages((prev) =>
-      prev.map((item) =>
-        item._id === selectedPackage._id ? { ...item, ...values } : item
-      )
-    );
-    message.success('Package updated successfully!');
-    setDrawerVisible(false);
+  const handleUpdate = async (values) => {
+    try {
+      await api.put(`/packages/${selectedPackage._id}`, values, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      toast.success('Package updated!');
+      setDrawerVisible(false);
+      fetchPackages();
+    } catch (error) {
+      console.error(error);
+      toast.error('Update failed!');
+    }
   };
 
   const showDeleteConfirm = (pkgId) => {
     confirm({
-      title: 'Are you sure delete this package?',
+      title: 'Are you sure you want to delete this package?',
       icon: <ExclamationCircleOutlined />,
       okText: 'Yes',
       okType: 'danger',
       cancelText: 'No',
-      onOk() {
-        setPackages((prev) => prev.filter((item) => item._id !== pkgId));
-        message.success('Package deleted successfully!');
+      centered: true,
+      onOk: async () => {
+        try {
+          await api.delete(`/packages/${pkgId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          toast.success('Package deleted!');
+          fetchPackages();
+        } catch (error) {
+          console.error(error);
+          toast.error('Failed to delete package!');
+        }
       },
     });
   };
-  useEffect(() => {
-    const fetchPackages = async () => {
-      try {
-        const res = await api.get('/packages/planner-packages', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }); 
-        setPackages(res.data);
-      } catch (error) {
-        console.error('Failed to fetch packages:', error);
-        message.error('Failed to load packages');
-      }
-    };
-  
-    fetchPackages();
-  }, []);
+
+  const columns = [
+    {
+      title: 'Package Name',
+      dataIndex: 'name',
+      key: 'name',
+      render: (text) => <strong>{text}</strong>,
+    },
+    {
+      title: 'Type',
+      dataIndex: 'type',
+      key: 'type',
+      render: (type) => (
+        <Tag color={type === 'stay' ? 'geekblue' : type === 'tour' ? 'green' : 'volcano'}>
+          {type.toUpperCase()}
+        </Tag>
+      ),
+    },
+    {
+      title: 'Duration',
+      key: 'duration',
+      render: (_, record) => {
+        const label =
+          record.type === 'event'
+            ? `${record.duration} hours`
+            : `${record.duration} days`;
+        return <span className="text-indigo-600 font-semibold">{label}</span>;
+      },
+    },
+    {
+      title: 'Price ($)',
+      dataIndex: 'price',
+      key: 'price',
+      render: (price) => <span className="text-indigo-600 font-semibold">${price}</span>,
+    },
+    {
+      title: 'Description',
+      dataIndex: 'description',
+      key: 'description',
+      ellipsis: true,
+    },
+    {
+      title: 'Actions',
+      key: 'actions',
+      render: (_, record) => (
+        <div className="flex gap-2">
+          <Button
+            icon={<EditOutlined />}
+            type="primary"
+            size="small"
+            onClick={() => showEditDrawer(record)}
+          />
+          <Button
+            icon={<DeleteOutlined />}
+            type="primary"
+            danger
+            size="small"
+            onClick={() => showDeleteConfirm(record._id)}
+          />
+        </div>
+      ),
+    },
+  ];
+
   return (
     <div className="p-6">
       <h1 className="text-3xl font-bold mb-6 text-center text-gray-800">
         My Packages
       </h1>
 
-      <Row gutter={[24, 24]}>
-        {packages.map((pkg) => (
-          <Col xs={24} sm={12} md={8} key={pkg._id}>
-            <Card
-              hoverable
-              className="rounded-xl shadow"
-              actions={[
-                <EditOutlined
-                  key="edit"
-                  onClick={() => showEditDrawer(pkg)}
-                />,
-                <DeleteOutlined
-                  key="delete"
-                  onClick={() => showDeleteConfirm(pkg._id)}
-                />,
-              ]}
-              cover={
-                <img
-                  alt={pkg.name}
-                  src={`https://source.unsplash.com/400x300/?event,${pkg.type}`}
-                  className="h-48 object-cover rounded-t-xl"
-                />
-              }
-            >
-              <Meta
-                title={pkg.name}
-                description={
-                  <>
-                    <p className="mt-1 text-gray-600">{pkg.description}</p>
-                    <p className="mt-2 text-sm text-gray-500">
-                      <strong>Type:</strong> {pkg.type} |{' '}
-                      <strong>Duration:</strong> {pkg.duration} days
-                    </p>
-                    <p className="text-indigo-600 font-bold text-lg mt-1">
-                      ₹{pkg.price}
-                    </p>
-                  </>
-                }
-              />
-            </Card>
-          </Col>
-        ))}
-      </Row>
+      <Table
+        columns={columns}
+        dataSource={packages}
+        rowKey="_id"
+        bordered
+        pagination={{ pageSize: 5 }}
+        className="shadow-lg rounded-xl overflow-hidden"
+      />
 
       <Drawer
         title="Edit Package"
@@ -137,25 +172,24 @@ const Packages = () => {
         visible={drawerVisible}
         destroyOnClose
       >
-        <Form layout="vertical" onFinish={handleUpdate} form={form}>
+        <Form layout="vertical" form={form} onFinish={handleUpdate}>
           <Form.Item name="name" label="Package Name" rules={[{ required: true }]}>
-            <Input placeholder="Enter package name" />
+            <Input />
           </Form.Item>
           <Form.Item name="type" label="Type" rules={[{ required: true }]}>
             <Select>
               <Select.Option value="stay">Stay</Select.Option>
-              <Select.Option value="tour">Tour</Select.Option>
               <Select.Option value="event">Event</Select.Option>
             </Select>
           </Form.Item>
-          <Form.Item name="price" label="Price (₹)" rules={[{ required: true }]}>
+          <Form.Item name="price" label="Price ($)" rules={[{ required: true }]}>
             <InputNumber className="w-full" min={0} />
           </Form.Item>
-          <Form.Item name="duration" label="Duration (days)" rules={[{ required: true }]}>
+          <Form.Item name="duration" label="Duration" rules={[{ required: true }]}>
             <InputNumber className="w-full" min={1} />
           </Form.Item>
           <Form.Item name="description" label="Description" rules={[{ required: true }]}>
-            <Input.TextArea rows={4} />
+            <Input.TextArea rows={3} />
           </Form.Item>
           <Form.Item>
             <Button type="primary" htmlType="submit" block>
