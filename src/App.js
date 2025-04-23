@@ -12,10 +12,14 @@ import PrivateRoute from './components/PrivateRoute';
 import Navbar from './components/home/Navbar';
 
 import EventPlannerLayout from './components/event-planner/EventPlannerLayout';
-import EventPlannerDashboard from './pages/EventPlannerDashboard'
+import EventPlannerDashboard from './pages/EventPlannerDashboard';
 import CreatePackage from './components/event-planner/CreatePackage';
 import Packages from './components/event-planner/Packages';
 import Settings from './components/event-planner/Settings';
+
+import AdminLayout from './components/admin/AdminLayout';
+import AdminUserManagement from './components/admin/AdminUserManagement';
+import AdminSettings from './components/admin/AdminSettings';
 
 import 'antd/dist/reset.css';
 import { ToastContainer } from 'react-toastify';
@@ -30,13 +34,17 @@ const App = () => {
           <Route path="/booking" element={<BookingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route
-            path="/admin/dashboard"
+            path="/admin"
             element={
               <PrivateRoute allowedRoles={['admin']}>
-                <AdminDashboard />
+                <AdminLayout />
               </PrivateRoute>
             }
-          />
+          >
+            <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="user-management" element={<AdminUserManagement />} />
+            <Route path="settings" element={<AdminSettings />} />
+          </Route>
 
           {/* All event-planner routes with sidebar layout */}
           <Route
