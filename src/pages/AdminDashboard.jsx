@@ -1,5 +1,17 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { Card, Statistic, Table, Tag, List, Avatar, Button, Spin, message } from 'antd';
+import {
+  Card,
+  Statistic,
+  Table,
+  Tag,
+  List,
+  Avatar,
+  Button,
+  Spin,
+  message,
+  Dropdown,
+  Menu,
+} from 'antd';
 import { Bar } from '@ant-design/plots';
 import {
   UserOutlined,
@@ -7,6 +19,7 @@ import {
   CheckCircleOutlined,
   CloseCircleOutlined,
   DollarOutlined,
+  MoreOutlined,
 } from '@ant-design/icons';
 import api from '../api/axiosInstance';
 import { AuthContext } from '../context/AuthContext';
@@ -15,7 +28,7 @@ const AdminDashboard = () => {
   const [planners, setPlanners] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { token } = useContext(AuthContext); 
+  const { token } = useContext(AuthContext);
 
   const fetchPlanners = async () => {
     try {
@@ -41,7 +54,24 @@ const AdminDashboard = () => {
     setLoading(false);
   }, []);
 
-  // Stats
+  const handlePlannerStatus = async (id, status) => {
+    try {
+      await api.put(
+        '/auth/planner-acceptance',
+        { id, status },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      message.success(`Planner ${status} successfully`);
+      fetchPlanners();
+    } catch (err) {
+      message.error('Failed to update planner status');
+    }
+  };
+
   const totalPlanners = planners.length;
   const approvedPlanners = planners.filter((p) => p.status === 'approved').length;
   const pendingPlanners = planners.filter((p) => p.status === 'pending').length;
@@ -49,19 +79,40 @@ const AdminDashboard = () => {
     (acc, curr) => (acc.includes(curr.guestName) ? acc : [...acc, curr.guestName]),
     []
   ).length;
+
   const totalRevenue = bookings
+  
     .filter((b) => b.status === 'accepted')
     .reduce((acc, curr) => acc + parseFloat(curr.priceRange || 0), 0);
 
   const analytics = [
-    { title: 'Total Event Planners', value: totalPlanners, icon: <TeamOutlined className="text-2xl text-blue-500" /> },
-    { title: 'Approved Planners', value: approvedPlanners, icon: <CheckCircleOutlined className="text-2xl text-green-500" /> },
-    { title: 'Pending Approvals', value: pendingPlanners, icon: <CloseCircleOutlined className="text-2xl text-red-500" /> },
-    { title: 'Total Guests', value: totalGuests, icon: <UserOutlined className="text-2xl text-purple-500" /> },
-    { title: 'Total Revenue', value: `$${totalRevenue}`, icon: <DollarOutlined className="text-2xl text-yellow-500" /> },
+    {
+      title: 'Total Event Planners',
+      value: totalPlanners,
+      icon: <TeamOutlined className="text-2xl text-blue-500" />,
+    },
+    {
+      title: 'Approved Planners',
+      value: approvedPlanners,
+      icon: <CheckCircleOutlined className="text-2xl text-green-500" />,
+    },
+    {
+      title: 'Pending Approvals',
+      value: pendingPlanners,
+      icon: <CloseCircleOutlined className="text-2xl text-red-500" />,
+    },
+    {
+      title: 'Total Guests',
+      value: totalGuests,
+      icon: <UserOutlined className="text-2xl text-purple-500" />,
+    },
+    {
+      title: 'Total Revenue',
+      value: `$${totalRevenue}`,
+      icon: <DollarOutlined className="text-2xl text-yellow-500" />,
+    },
   ];
 
-  // Table Config
   const columns = [
     { title: 'Name', dataIndex: 'fullName', key: 'name' },
     { title: 'Email', dataIndex: 'email', key: 'email' },
@@ -69,43 +120,49 @@ const AdminDashboard = () => {
       title: 'Registration Date',
       dataIndex: 'createdAt',
       key: 'registrationDate',
-      render: (date) => new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
-    },    {
-      title: 'Actions',
-      key: 'actions',
-      render: (_, record) =>
-        record.status === 'pending' ? (
-          <div className="flex gap-2">
-            <Button type="primary" onClick={() => handlePlannerStatus(record._id, 'approved')}>
-              Approve
-            </Button>
-            <Button danger onClick={() => handlePlannerStatus(record._id, 'rejected')}>
-              Reject
-            </Button>
-          </div>
-        ) : (
+      render: (date) =>
+        new Date(date).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        }),
+    },
+    {
+      title: 'Status',
+      key: 'status',
+      dataIndex: 'status',
+      render: (status) =>
+        status === 'approved' ? (
           <Tag color="green">Approved</Tag>
+        ) : status === 'rejected' ? (
+          <Tag color="red">Rejected</Tag>
+        ) : (
+          <Tag color="orange">Pending</Tag>
         ),
     },
-  ];
-  const handlePlannerStatus = async (id, status) => {
-    try {
-      await api.put(
-        '/auth/planner-acceptance',
-        { id, status }, 
-        {
-          headers: {
-            Authorization: `Bearer ${token}`, 
-          },
-        }
-      );
-      message.success(`Planner ${status} successfully`);
-      fetchPlanners(); 
-    } catch (err) {
-      message.error('Failed to update planner status');
+    {
+      title: 'Actions',
+      key: 'actions',
+      render: (_, record) => {
+        const menu = (
+          <Menu
+            onClick={({ key }) => handlePlannerStatus(record._id, key)}
+            items={[
+              { label: 'Approve', key: 'approved' },
+              { label: 'Reject', key: 'rejected' },
+            ]}
+          />
+        );
+    
+        return (
+          <Dropdown overlay={menu} trigger={['click']}>
+            <Button icon={<MoreOutlined />} />
+          </Dropdown>
+        );
+      },
     }
-  };
-  
+    
+  ];
 
   const config = {
     data: [
@@ -132,7 +189,6 @@ const AdminDashboard = () => {
         </div>
       ) : (
         <>
-          {/* Analytics Summary */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
             {analytics.map((item, index) => (
               <Card key={index} bordered>
@@ -147,13 +203,11 @@ const AdminDashboard = () => {
             ))}
           </div>
 
-          {/* Pending Planners Table */}
           <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-4">📋 Pending Event-Planner Approvals</h2>
-            <Table columns={columns} dataSource={planners.filter((p) => p.status === 'pending')} rowKey="_id" bordered />
+            <h2 className="text-xl font-semibold mb-4">📋 Event-Planner Accounts Approvals</h2>
+            <Table columns={columns} dataSource={planners} rowKey="_id" bordered />
           </div>
 
-          {/* Graph */}
           <div className="mb-8">
             <h2 className="text-xl font-semibold mb-4">📈 Booking Overview</h2>
             <Card>
@@ -161,7 +215,6 @@ const AdminDashboard = () => {
             </Card>
           </div>
 
-          {/* Latest Accepted Bookings */}
           <div>
             <h2 className="text-xl font-semibold mb-4">✅ Latest Accepted Bookings</h2>
             <List
